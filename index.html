@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tablero de Labores & Pagos a Cuenta</title>
+<style>
+:root{
+  --bg:#f4f7f4; --surface:#ffffff; --surface2:#f1f7f1; --line:#e3ebe4; --ink:#1f2a23; --ink2:#55645a; --ink3:#8a978e;
+  --g9:#1b5e20; --g7:#2e7d32; --g5:#43a047; --g3:#81c784; --g1:#e8f5e9; --bar:#43a047; --bartrack:#e6efe7;
+  --warn:#b26a00; --shadow:0 1px 2px rgba(20,40,25,.06),0 4px 14px rgba(20,40,25,.05);
+}
+[data-theme="dark"]{
+  --bg:#0f1411; --surface:#171e1a; --surface2:#1d2620; --line:#2a352e; --ink:#e4ece6; --ink2:#a9b8ad; --ink3:#748278;
+  --g1:#1f3324; --bar:#66bb6a; --bartrack:#25302a; --warn:#ffb74d; --shadow:0 1px 2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;transition:background .2s,color .2s}
+header{background:linear-gradient(120deg,var(--g9),var(--g7) 60%,var(--g5));color:#fff;padding:18px 28px 16px}
+.hrow{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+h1{font-size:22px;margin:0;font-weight:700;letter-spacing:.2px}
+.sub{color:#c8e6c9;font-size:12.5px;margin-top:4px}
+.spacer{flex:1}
+.pill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);padding:6px 12px;border-radius:999px;font-size:12px;color:#fff;text-decoration:none;white-space:nowrap}
+a.pill:hover,button.pill:hover{background:rgba(255,255,255,.24)}
+button.pill{cursor:pointer;font:inherit;font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;background:#ffd54f}
+.dot.live{background:#b9f6ca;box-shadow:0 0 0 3px rgba(185,246,202,.25)}
+main{padding:18px 28px 40px;max-width:1700px;margin:0 auto}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+.filters{padding:14px 16px;display:grid;grid-template-columns:repeat(5,minmax(150px,1fr)) auto;gap:12px;align-items:end}
+.f label{display:block;font-size:10.5px;font-weight:700;color:var(--ink3);letter-spacing:.6px;text-transform:uppercase;margin-bottom:5px}
+select,input[type=search]{width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface2);color:var(--ink);font:inherit;font-size:13px}
+select:focus,input:focus{outline:2px solid var(--g5);outline-offset:0}
+.btn{padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface2);color:var(--ink2);cursor:pointer;font:inherit;font-size:13px;white-space:nowrap}
+.btn:hover{border-color:var(--g5);color:var(--g7)}
+.ms{position:relative}
+.ms-btn{width:100%;display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface2);color:var(--ink);font:inherit;font-size:13px;cursor:pointer;text-align:left}
+.ms-btn .txt{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms-btn .n{background:var(--g7);color:#fff;border-radius:999px;font-size:11px;padding:1px 7px;font-weight:700}
+.ms-btn .car{color:var(--ink3);font-size:10px}
+.ms.active .ms-btn{border-color:var(--g5);box-shadow:inset 3px 0 0 var(--g5)}
+.ms-pop{display:none;position:absolute;top:calc(100% + 4px);left:0;min-width:100%;width:max-content;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.18);z-index:40;padding:8px}
+.ms.open .ms-pop{display:block}
+.ms-pop input[type=search]{margin-bottom:6px}
+.ms-acts{display:flex;gap:6px;margin-bottom:6px}
+.ms-acts button{flex:1;padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid var(--line);background:var(--surface2);color:var(--ink2);cursor:pointer}
+.ms-acts button:hover{border-color:var(--g5);color:var(--g7)}
+.ms-list{max-height:280px;overflow:auto}
+.ms-list label{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;font-size:12.5px;color:var(--ink);text-transform:none;letter-spacing:0;font-weight:400;margin:0;cursor:pointer}
+.ms-list label:hover{background:var(--g1)}
+.ms-list input{accent-color:var(--g7);width:15px;height:15px;flex:none}
+.ms-foot{font-size:11px;color:var(--ink3);padding:6px 4px 0;border-top:1px solid var(--line);margin-top:6px}
+.months{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding-top:4px;border-top:1px dashed var(--line);margin-top:2px}
+.months .lbl{font-size:10.5px;font-weight:700;color:var(--ink3);letter-spacing:.6px;text-transform:uppercase;margin-right:6px}
+.chip{border:1px solid var(--line);background:var(--surface2);color:var(--ink2);padding:5px 11px;border-radius:999px;cursor:pointer;font:inherit;font-size:12.5px;user-select:none}
+.chip.on{background:var(--g7);border-color:var(--g7);color:#fff}
+.chip.all{font-weight:700}
+.chip:disabled{opacity:.4;cursor:default}
+.toggle{display:inline-flex;align-items:center;gap:8px;margin-left:auto;font-size:12.5px;color:var(--ink2);cursor:pointer}
+.toggle input{accent-color:var(--g7);width:16px;height:16px}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:14px 0}
+.kpi{padding:14px 16px;border-left:4px solid var(--g5)}
+.kpi .t{font-size:10.5px;font-weight:700;color:var(--g7);letter-spacing:.6px;text-transform:uppercase}
+[data-theme="dark"] .kpi .t{color:var(--g3)}
+.kpi .v{font-size:24px;font-weight:700;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:11.5px;color:var(--ink3)}
+.grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px}
+.panel{padding:16px 18px;min-width:0}
+.panel h2{font-size:14px;margin:0 0 2px;color:var(--g7);font-weight:700}
+[data-theme="dark"] .panel h2{color:var(--g3)}
+.panel .desc{font-size:12px;color:var(--ink3);margin-bottom:12px}
+.ph{display:flex;gap:10px;align-items:flex-start}
+.ph .spacer{flex:1}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:#fff;background:var(--g7);padding:8px 10px;text-align:right;font-weight:700;position:sticky;top:0;z-index:1;cursor:pointer;white-space:nowrap}
+th:first-child{text-align:left;border-top-left-radius:8px}
+th:last-child{border-top-right-radius:8px}
+th.l{text-align:left}
+td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+td.l{text-align:left;white-space:normal}
+tr.grp td{background:var(--surface2);font-weight:700;border-top:2px solid var(--g3)}
+tr.grp td .muted{font-weight:400}
+tbody tr:not(.grp):hover td{background:var(--g1)}
+.muted{color:var(--ink3);font-size:12px}
+.scroll{max-height:640px;overflow:auto;border-radius:8px}
+.pct{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.pct .track{width:90px;height:8px;background:var(--bartrack);border-radius:4px;overflow:hidden}
+.pct .fill{height:100%;background:var(--bar);border-radius:0 4px 4px 0}
+.pct span{min-width:48px}
+.chart .row{display:grid;grid-template-columns:minmax(120px,40%) 1fr;gap:10px;align-items:center;padding:5px 0;cursor:default}
+.chart .name{font-size:12.5px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chart .barw{display:flex;align-items:center;gap:8px}
+.chart .bar{height:18px;background:var(--bar);border-radius:0 4px 4px 0;min-width:2px;transition:width .3s}
+.chart .row:hover .bar{filter:brightness(1.1)}
+.chart .row:hover .name{color:var(--ink)}
+.chart .val{font-size:12px;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.chart .total{display:flex;justify-content:space-between;border-top:1px solid var(--line);margin-top:8px;padding-top:8px;font-weight:700}
+.tip{position:fixed;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:0 6px 20px rgba(0,0,0,.18);border-radius:8px;padding:8px 10px;font-size:12px;display:none;z-index:50;max-width:320px}
+.tip b{display:block;margin-bottom:3px}
+.empty{padding:30px;text-align:center;color:var(--ink3)}
+.banner{display:none;margin:0 0 12px;padding:10px 14px;border-radius:10px;background:rgba(255,183,77,.14);border:1px solid rgba(255,183,77,.45);color:var(--warn);font-size:12.5px}
+#tCon td.l{min-width:150px}#tCon .pct .track{width:44px}#tCon td,#tCon th{padding:6px 7px;font-size:12.5px}#tCon th{font-size:10px}
+.notes{font-size:11.5px;color:var(--ink3);margin-top:14px;line-height:1.6}
+.stack{display:flex;flex-direction:column;gap:14px;min-width:0}
+@media print{header .pill,.filters .btn,#q,#csv,#dlx2,.toggle{display:none!important}body{background:#fff}.scroll{max-height:none!important;overflow:visible}.grid{grid-template-columns:1fr}.card{box-shadow:none}header{-webkit-print-color-adjust:exact;print-color-adjust:exact}th,.bar,.fill,.chip.on{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+@media (max-width:1200px){.kpis{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:1fr}.filters{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hrow">
+    <div>
+      <h1>🌾 Tablero de Labores &amp; Pagos a Cuenta</h1>
+      <div class="sub">Costos por contratista · % por labor · pago a cuenta consolidado</div>
+    </div>
+    <div class="spacer"></div>
+    <span class="pill" id="sync"><span class="dot" id="dot"></span><span id="syncTxt">Conectando…</span></span>
+    <button class="pill" id="refresh" title="Volver a leer las planillas">⟳ Actualizar</button>
+    <a class="pill" target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/1SrLXjOh6mmOZVPJWKt3QxiOA3hFXAGtzHJa9mqWCb8I/edit?usp=sharing">🔗 Planilla Labores</a>
+    <a class="pill" target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/1MP6sudvLIGcPgOjgjdbQk36ie0oLnXYgkBPOg-lQaoU/edit?usp=sharing">🔗 Planilla Pagos</a>
+    <button class="pill" id="dlx" title="Descargar Excel con los filtros aplicados">⬇ Excel</button>
+    <button class="pill" id="dlp" title="Imprimir o guardar como PDF">🖨 PDF</button>
+    <button class="pill" id="theme" title="Cambiar modo claro / oscuro">🌙 Modo oscuro</button>
+  </div>
+</header>
+<main>
+  <div class="banner" id="banner"></div>
+  <section class="card filters" aria-label="Filtros">
+    <div class="f"><label>Sociedad</label><div class="ms" id="fSoc"></div></div>
+    <div class="f"><label>Labor</label><div class="ms" id="fLab"></div></div>
+    <div class="f"><label>Certificación</label><div class="ms" id="fCert"></div></div>
+    <div class="f"><label>Contratista</label><div class="ms" id="fCon"></div></div>
+    <div class="f"><label>Año</label><div class="ms" id="fAnio"></div></div>
+    <button class="btn" id="reset">Limpiar filtros</button>
+    <div class="months" id="months"><span class="lbl">Meses</span></div>
+  </section>
+
+  <section class="kpis">
+    <div class="card kpi"><div class="t">Total $ labores</div><div class="v" id="k1">–</div><div class="s">planilla Labores · TOTAL$</div></div>
+    <div class="card kpi"><div class="t">Total $ pago a cuenta</div><div class="v" id="k2">–</div><div class="s">planilla Pagos · TOTAL $ PAGO A CUENTA</div></div>
+    <div class="card kpi"><div class="t">% pagado s/ certificado</div><div class="v" id="k3">–</div><div class="s">pago a cuenta ÷ total $ certificados</div></div>
+    <div class="card kpi"><div class="t">Pago asignado a labores</div><div class="v" id="k4">–</div><div class="s">repartido por % de cada labor</div></div>
+    <div class="card kpi"><div class="t">Pago sin labores cargadas</div><div class="v" id="k5">–</div><div class="s">contratistas sin labores en el filtro</div></div>
+    <div class="card kpi"><div class="t">Contratistas con pago</div><div class="v" id="k6">–</div><div class="s">con pago a cuenta &gt; 0</div></div>
+  </section>
+
+  <div class="grid">
+    <section class="card panel">
+      <div class="ph">
+        <div><h2>① Detalle por contratista</h2><div class="desc">Total $ de cada labor y % sobre el total $ del contratista, con el pago a cuenta que le corresponde a cada labor.</div></div>
+        <div class="spacer"></div>
+        <label class="toggle"><input type="checkbox" id="soloPago"> Solo con pago a cuenta</label>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input type="search" id="q" placeholder="Buscar contratista o labor…">
+        <button class="btn" id="csv">⬇ CSV</button><button class="btn" id="dlx2">⬇ Excel</button>
+      </div>
+      <div class="scroll"><table id="tDet"></table></div>
+    </section>
+    <div class="stack">
+      <section class="card panel">
+        <h2>② Pago a cuenta totalizado por labor</h2>
+        <div class="desc">Pago a cuenta de cada contratista × % de cada labor en su total $.</div>
+        <div class="chart" id="chart"></div>
+      </section>
+      <section class="card panel">
+        <h2>③ Contratistas con pago a cuenta</h2>
+        <div class="desc">Clic en un encabezado para ordenar.</div>
+        <div class="scroll" style="max-height:420px"><table id="tCon"></table></div>
+      </section>
+    </div>
+  </div>
+  <div class="notes">
+    • Sociedad, Labor y Meses filtran la planilla de labores (la de pagos no tiene esas columnas). Certificación y Contratista filtran ambas.<br>
+    • El % de cada labor se calcula sobre el total del contratista con todos los filtros salvo Labor, así el filtro Labor no infla los porcentajes.<br>
+    • Los datos se leen en vivo de Google Sheets al abrir y cada 5 minutos. Las planillas deben estar compartidas como «Cualquier persona con el vínculo».
+  </div>
+</main>
+<div class="tip" id="tip"></div>
+
+<script>
+const IDL = "1SrLXjOh6mmOZVPJWKt3QxiOA3hFXAGtzHJa9mqWCb8I", IDP = "1MP6sudvLIGcPgOjgjdbQk36ie0oLnXYgkBPOg-lQaoU";
+const SNAP = {"lab": [["17.1.ROLO PICADOR", "VELASQUEZ LUCIANA MARIELA", "2", "29/10/2026", "2174850"], ["17.1.ROLO PICADOR", "VELASQUEZ LUCIANA MARIELA", "2", "29/10/2026", "2093850"], ["1.1.PULVERIZACION", "CHAIJ JORGE SAHID", "2", "11/9/2026", "483300"], ["1.1.PULVERIZACION", "CHAIJ JORGE SAHID", "2", "11/9/2026", "465300"], ["4.1.DOBLE ACCION 1ER PASADA", "BIANCOTTI ENZO", "1", "9/4/2026", "3540000"], ["4.1.DOBLE ACCION 1ER PASADA", "BIANCOTTI ENZO", "1", "9/4/2026", "3540000"], ["3.2.SIEMBRA C.COBERTURA", "BIANCOTTI ENZO", "1", "15/4/2026", "3000000"], ["3.2.SIEMBRA C.COBERTURA", "BIANCOTTI ENZO", "1", "15/4/2026", "3000000"], ["1.1.PULVERIZACION", "CHAIJ JORGE SAHID", "2", "8/8/2026", "483300"], ["1.1.PULVERIZACION", "CHAIJ JORGE SAHID", "2", "8/8/2026", "465300"], ["2.4.SIEMBRA DIRECTA C/BARRERASTROJO-PILOTO", "PAMPA AGRO SERVICIOS S.R.L.", "3", "9/11/2026", "4688010"], ["2.4.SIEMBRA DIRECTA C/BARRERASTROJO-PILOTO", "PAMPA AGRO SERVICIOS S.R.L.", "3", "9/11/2026", "3737410"], ["2.4.SIEMBRA DIRECTA C/BARRERASTROJO-PILOTO", "PAMPA AGRO SERVICIOS S.R.L.", "3", "9/11/2026", "776000"], ["18.1.PLUS INOCULACION", "PAMPA AGRO SERVICIOS S.R.L.", "3", "9/11/2026", "299646"], ["18.1.PLUS INOCULACION", "PAMPA AGRO SERVICIOS S.R.L.", "3", "9/11/2026", "288486"], ["1.1.PULVERIZACION", "CORTEZ MAXIMILIANO EDGARDO", "1", "19/2/2026", "480000"], ["1.1.PULVERIZACION", "CORTEZ MAXIMILIANO EDGARDO", "1", "19/2/2026", "480000"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "2", "29/8/2026", "560400"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "2", "29/8/2026", "260100"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "2", "29/8/2026", "194600"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "3", "1/11/2026", "560400"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "3", "1/11/2026", "260100"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "3", "1/11/2026", "194600"], ["2.5.SIEMBRA D C/BARRERASTROJO-PILOTO-KIT NEUMATICO", "VELASQUEZ LUCIANA MARIELA", "3", "31/10/2026", "3180000"], ["2.5.SIEMBRA D C/BARRERASTROJO-PILOTO-KIT NEUMATICO", "VELASQUEZ LUCIANA MARIELA", "3", "31/10/2026", "2757060"], ["2.5.SIEMBRA D C/BARRERASTROJO-PILOTO-KIT NEUMATICO", "VELASQUEZ LUCIANA MARIELA", "3", "31/10/2026", "2062760"], ["2.5.SIEMBRA D C/BARRERASTROJO-PILOTO-KIT NEUMATICO", "VELASQUEZ LUCIANA MARIELA", "3", "31/10/2026", "2760240"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "1", "15/4/2026", "450500"], ["4.2.DOBLE ACCION 2DA PASADA", "VELASQUEZ LUCIANA MARIELA", "1", "20/4/2026", "1140000"], ["4.1.DOBLE ACCION 1ER PASADA", "VELASQUEZ LUCIANA MARIELA", "1", "19/4/2026", "3908750"], ["4.1.DOBLE ACCION 1ER PASADA", "VELASQUEZ LUCIANA MARIELA", "1", "19/4/2026", "1991250"], ["4.1.DOBLE ACCION 1ER PASADA", "VELASQUEZ LUCIANA MARIELA", "1", "19/4/2026", "1401250"], ["5.1.PARATILL 1ER PASADA", "VELASQUEZ LUCIANA MARIELA", "2", "23/9/2026", "2340900"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "1", "12/2/2026", "229500"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "1", "12/2/2026", "161500"], ["3.2.SIEMBRA C.COBERTURA", "VELASQUEZ LUCIANA MARIELA", "1", "21/4/2026", "3312500"], ["3.2.SIEMBRA C.COBERTURA", "VELASQUEZ LUCIANA MARIELA", "1", "21/4/2026", "1687500"], ["3.2.SIEMBRA C.COBERTURA", "VELASQUEZ LUCIANA MARIELA", "1", "21/4/2026", "1187500"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "2", "30/8/2026", "349500"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "2", "30/8/2026", "305500"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "2", "30/8/2026", "1148800"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "2", "30/8/2026", "249800"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "2", "30/8/2026", "338800"], ["4.1.DOBLE ACCION 1ER PASADA", "VELASQUEZ LUCIANA MARIELA", "2", "23/10/2026", "2541000"], ["2.5.SIEMBRA D C/BARRERASTROJO-PILOTO-KIT NEUMATICO", "VELASQUEZ LUCIANA MARIELA", "3", "24/10/2026", "3704700"], ["2.5.SIEMBRA D C/BARRERASTROJO-PILOTO-KIT NEUMATICO", "VELASQUEZ LUCIANA MARIELA", "3", "24/10/2026", "12109440"], ["2.5.SIEMBRA D C/BARRERASTROJO-PILOTO-KIT NEUMATICO", "VELASQUEZ LUCIANA MARIELA", "3", "24/10/2026", "3238300"], ["2.5.SIEMBRA D C/BARRERASTROJO-PILOTO-KIT NEUMATICO", "VELASQUEZ LUCIANA MARIELA", "3", "24/10/2026", "742000"], ["2.5.SIEMBRA D C/BARRERASTROJO-PILOTO-KIT NEUMATICO", "VELASQUEZ LUCIANA MARIELA", "3", "24/10/2026", "2849280"], ["2.5.SIEMBRA D C/BARRERASTROJO-PILOTO-KIT NEUMATICO", "VELASQUEZ LUCIANA MARIELA", "3", "24/10/2026", "2647880"], ["3.2.SIEMBRA C.COBERTURA", "ACCOTTO RUBEN HUGO, ACCOTTO FERNANDO DAMIAN Y ACCO", "1", "14/5/2026", "5562500"], ["3.2.SIEMBRA C.COBERTURA", "ACCOTTO RUBEN HUGO, ACCOTTO FERNANDO DAMIAN Y ACCO", "1", "14/5/2026", "1750000"], ["3.2.SIEMBRA C.COBERTURA", "ACCOTTO RUBEN HUGO, ACCOTTO FERNANDO DAMIAN Y ACCO", "1", "14/5/2026", "375000"], ["4.1.DOBLE ACCION 1ER PASADA", "VELASQUEZ LUCIANA MARIELA", "1", "10/4/2026", "2728750"], ["4.1.DOBLE ACCION 1ER PASADA", "VELASQUEZ LUCIANA MARIELA", "1", "10/4/2026", "2212500"], ["4.1.DOBLE ACCION 1ER PASADA", "VELASQUEZ LUCIANA MARIELA", "1", "10/4/2026", "8260000"], ["4.1.DOBLE ACCION 1ER PASADA", "VELASQUEZ LUCIANA MARIELA", "1", "10/4/2026", "1917500"], ["4.1.DOBLE ACCION 1ER PASADA", "VELASQUEZ LUCIANA MARIELA", "1", "10/4/2026", "1917500"], ["5.1.PARATILL 1ER PASADA", "VELASQUEZ LUCIANA MARIELA", "2", "22/9/2026", "2749500"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "1", "12/2/2026", "314500"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "1", "12/2/2026", "255000"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "1", "12/2/2026", "952000"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "1", "12/2/2026", "221000"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "1", "12/2/2026", "221000"], ["3.2.SIEMBRA C.COBERTURA", "VELASQUEZ LUCIANA MARIELA", "1", "21/4/2026", "2312500"], ["3.2.SIEMBRA C.COBERTURA", "VELASQUEZ LUCIANA MARIELA", "1", "21/4/2026", "1875000"], ["3.2.SIEMBRA C.COBERTURA", "VELASQUEZ LUCIANA MARIELA", "1", "21/4/2026", "7000000"], ["3.2.SIEMBRA C.COBERTURA", "VELASQUEZ LUCIANA MARIELA", "1", "21/4/2026", "1625000"], ["3.2.SIEMBRA C.COBERTURA", "VELASQUEZ LUCIANA MARIELA", "1", "21/4/2026", "1625000"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "3", "25/10/2026", "349500"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "3", "25/10/2026", "305500"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "3", "25/10/2026", "1148800"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "3", "25/10/2026", "249800"], ["1.1.PULVERIZACION", "CARDOSO MATIAS GASTON", "3", "25/10/2026", "338800"], ["1.1.PULVERIZACION", "FORESTELLO DIEGO", "2", "10/9/2026", "430200"], ["1.1.PULVERIZACION", "FORESTELLO DIEGO", "2", "10/9/2026", "456300"], ["1.1.PULVERIZACION", "FORESTELLO DIEGO", "2", "10/9/2026", "452200"], ["1.1.PULVERIZACION", "FORESTELLO DIEGO", "2", "10/9/2026", "960400"], ["2.5.SIEMBRA D C/BARRERASTROJO-PILOTO-KIT NEUMATICO", "TESTA. ARIEL", "3", "6/11/2026", "1910120"], ["2.5.SIEMBRA D C/BARRERASTROJO-PILOTO-KIT NEUMATICO", "TESTA. ARIEL", "3", "6/11/2026", "5300000"], ["2.5.SIEMBRA D C/BARRERASTROJO-PILOTO-KIT NEUMATICO", "TESTA. ARIEL", "3", "6/11/2026", "3180000"], ["2.5.SIEMBRA D C/BARRERASTROJO-PILOTO-KIT NEUMATICO", "TESTA. ARIEL", "3", "6/11/2026", "1700240"], ["2.5.SIEMBRA D C/BARRERASTROJO-PILOTO-KIT NEUMATICO", "TESTA. ARIEL", "3", "6/11/2026", "2650000"], ["2.5.SIEMBRA D C/BARRERASTROJO-PILOTO-KIT NEUMATICO", "TESTA. ARIEL", "3", "6/11/2026", "4836780"], ["2.5.SIEMBRA D C/BARRERASTROJO-PILOTO-KIT NEUMATICO", "TESTA. ARIEL", "3", "6/11/2026", "4793320"], ["1.1.PULVERIZACION", "PURA PAMPA S.A.", "2", "10/6/2026", "431000"], ["1.1.PULVERIZACION", "PURA PAMPA S.A.", "2", "10/6/2026", "457400"], ["1.1.PULVERIZACION", "PURA PAMPA S.A.", "2", "10/6/2026", "456500"], ["1.1.PULVERIZACION", "PURA PAMPA S.A.", "2", "10/6/2026", "960400"], ["1.1.PULVERIZACION", "PANZA EMANUEL ENRIQUE", "2", "20/10/2026", "757920"], ["1.1.PULVERIZACION", "PANZA EMANUEL ENRIQUE", "2", "20/10/2026", "1014240"], ["1.1.PULVERIZACION", "PANZA EMANUEL ENRIQUE", "2", "20/10/2026", "507000"], ["1.1.PULVERIZACION", "PANZA EMANUEL ENRIQUE", "2", "10/8/2026", "757920"], ["1.1.PULVERIZACION", "PANZA EMANUEL ENRIQUE", "2", "10/8/2026", "1014240"], ["1.1.PULVERIZACION", "PANZA EMANUEL ENRIQUE", "2", "10/8/2026", "507000"], ["2.5.SIEMBRA D C/BARRERASTROJO-PILOTO-KIT NEUMATICO", "BONINO CLAUDIO", "3", "26/10/2026", "4452000"], ["2.5.SIEMBRA D C/BARRERASTROJO-PILOTO-KIT NEUMATICO", "BONINO CLAUDIO", "3", "26/10/2026", "6694960"], ["2.5.SIEMBRA D C/BARRERASTROJO-PILOTO-KIT NEUMATICO", "BONINO CLAUDIO", "3", "26/10/2026", "4507120"], ["2.5.SIEMBRA D C/BARRERASTROJO-PILOTO-KIT NEUMATICO", "BONINO CLAUDIO", "3", "26/10/2026", "4478500"]], "pag": [["BARANDA, ANDRES", "CORTEZ MAXIMILIANO EDGARDO", "3", "15101520", "0", "15101520"], ["BARANDA, ANDRES", "CORTEZ MAXIMILIANO EDGARDO", "2", "19782360", "16000000", "3782360"], ["BARANDA, ANDRES", "DAN MIL AGRO S.A.S.", "2", "1200000", "1200000", "0"], ["BARANDA, ANDRES", "DAN MIL AGRO S.A.S.", "3", "1126800", "1126800", "0"], ["BARANDA, ANDRES", "ESCUDERO JOSE RAUL", "3", "5510520", "0", "5510520"], ["BARANDA, ANDRES", "ESCUDERO JOSE RAUL", "2", "7803960", "5500000", "2303960"], ["BARANDA, ANDRES", "FORESTELLO DIEGO", "2", "18020100", "7000000", "11020100"], ["BARANDA, ANDRES", "FORESTELLO DIEGO", "0", "2080400", "0", "2080400"], ["BARANDA, ANDRES", "FORESTELLO DIEGO", "3", "9663900", "0", "9663900"], ["BARANDA, ANDRES", "FURLAN, MAXIMILIANO", "3", "69874920", "38000000", "31874920"], ["BARANDA, ANDRES", "LAGUARAL S.R.L", "3", "1781640", "0", "1781640"], ["BARANDA, ANDRES", "LAGUARAL S.R.L", "2", "2391360", "0", "2391360"], ["BARANDA, ANDRES", "PURA PAMPA S.A.", "2", "2305300", "2305300", "0"], ["BARANDA, ANDRES", "TESTA. ARIEL", "2", "54518750", "54518752", "-2"], ["BARANDA, ANDRES", "TESTA. ARIEL", "3", "243793670", "37882248", "205911422"], ["CAZZOLA, NICOLAS", "ACCOTTO RUBEN HUGO, ACCOTTO FERNANDO DAMIAN Y ACCO", "1", "7687500", "7687500", "0"], ["CAZZOLA, NICOLAS", "AGRO GONDAL SA", "2", "3270000", "0", "3270000"], ["CAZZOLA, NICOLAS", "AGRO GONDAL SA", "3", "2777200", "0", "2777200"], ["CAZZOLA, NICOLAS", "BARZOLA FRANCISCO", "2", "8919900", "0", "8919900"], ["CAZZOLA, NICOLAS", "BLASI GONZALO NICOLAS", "2", "1500000", "1500000", "0"], ["CAZZOLA, NICOLAS", "CARDOSO MATIAS GASTON", "3", "24137900", "0", "24137900"], ["CAZZOLA, NICOLAS", "CARDOSO MATIAS GASTON", "1", "2805000", "2805000", "0"], ["CAZZOLA, NICOLAS", "CARDOSO MATIAS GASTON", "2", "36282800", "28000000", "8282800"], ["CAZZOLA, NICOLAS", "FALCON LUCAS GABRIEL", "3", "9019700", "0", "9019700"], ["CAZZOLA, NICOLAS", "FALCON LUCAS GABRIEL", "2", "20356450", "10000000", "10356450"], ["CAZZOLA, NICOLAS", "FARMLAND S.R.L", "2", "75000", "75000", "0"], ["CAZZOLA, NICOLAS", "JIMENEZ ERICH NAHUEL", "3", "31718520", "13700000", "18018520"], ["CAZZOLA, NICOLAS", "MANERICH SRL", "3", "153003288", "32000000", "121003288"], ["CAZZOLA, NICOLAS", "MORES ALEXIS", "2", "4102560", "4102560", "0"], ["CAZZOLA, NICOLAS", "OCHOA ADRIANA ALICIA", "2", "450000", "450000", "0"], ["CAZZOLA, NICOLAS", "PREMET SERGIO ANTONIO", "3", "43393920", "31600000", "11793920"], ["CAZZOLA, NICOLAS", "VELASQUEZ LUCIANA MARIELA", "3", "143687240", "27678150", "116009090"], ["CAZZOLA, NICOLAS", "VELASQUEZ LUCIANA MARIELA", "2", "10781400", "10781400", "0"], ["CAZZOLA, NICOLAS", "VELASQUEZ LUCIANA MARIELA", "1", "46102500", "46102500", "0"], ["GALETTO, MARTIN", "AGROKENTI SAS", "2", "3681008", "3681008", "0"], ["GALETTO, MARTIN", "AGROSERVICIOS GILE", "0", "1441400", "0", "1441400"], ["GALETTO, MARTIN", "AGROSERVICIOS GILE", "3", "5424600", "0", "5424600"], ["GALETTO, MARTIN", "AGROSERVICIOS GILE", "2", "16069000", "6000000", "10069000"], ["GALETTO, MARTIN", "BARZOLA FRANCISCO", "2", "13212450", "0", "13212450"], ["GALETTO, MARTIN", "GALVALISI, GONZALO JULIO", "3", "50814420", "17500000", "33314420"], ["GALETTO, MARTIN", "HIJOS DE VICENTE GONZALEZ S.A.S", "2", "11125950", "3000000", "8125950"], ["GALETTO, MARTIN", "HORLANDO GASTALDI Y MARIA INES CUENCA SH", "3", "3988400", "0", "3988400"], ["GALETTO, MARTIN", "HORLANDO GASTALDI Y MARIA INES CUENCA SH", "2", "8035700", "3000000", "5035700"], ["GALETTO, MARTIN", "KREVS EZEQUIEL", "3", "50817330", "0", "50817330"], ["GALETTO, MARTIN", "KREVS EZEQUIEL", "2", "19525000", "19525000", "0"], ["GALETTO, MARTIN", "SAINZ RICARDO ERNESTO", "43", "216949708", "0", "216949708"], ["GALETTO, MARTIN", "SANTA ELENA AGRO S.R.L.", "2", "20145400", "20145400", "0"], ["GALETTO, MARTIN", "SOSA ADRIAN", "3", "10477500", "0", "10477500"], ["GALETTO, MARTIN", "SOSA ADRIAN", "2", "25390000", "8000000", "17390000"], ["GALETTO, MARTIN", "VILLARRUEL GERONIMO", "2", "1800000", "1800000", "0"], ["INGOGLIA, PABLO", "BRINATTI LEONARDO IVAN", "0", "31176720", "0", "31176720"], ["INGOGLIA, PABLO", "BRINATTI LEONARDO IVAN", "3", "1873333", "15000000", "-13126667"], ["INGOGLIA, PABLO", "BRINATTI, ALEXIS DANIEL", "0", "31111000", "0", "31111000"], ["INGOGLIA, PABLO", "BRINATTI, ALEXIS DANIEL", "3", "1873333", "0", "1873333"], ["INGOGLIA, PABLO", "BRINATTI, DANIEL TOMAS", "3", "1873333", "0", "1873333"], ["INGOGLIA, PABLO", "BRINATTI, DANIEL TOMAS", "0", "31656900", "0", "31656900"], ["INGOGLIA, PABLO", "BUSTOS GUILLERMO JOSE", "2", "525000", "525000", "0"], ["INGOGLIA, PABLO", "CASSAGNE, GUSTAVO HERNAN", "2", "3012000", "2000000", "1012000"], ["INGOGLIA, PABLO", "CASSAGNE, GUSTAVO HERNAN", "0", "15017880", "0", "15017880"], ["INGOGLIA, PABLO", "DON TOMAS SRL", "0", "161848220", "0", "161848220"], ["INGOGLIA, PABLO", "DON TOMAS SRL", "2", "21981000", "20000000", "1981000"], ["INGOGLIA, PABLO", "GASTALDI ROBERTO JUSTO", "2", "20704500", "9000000", "11704500"], ["INGOGLIA, PABLO", "MARINO DIEGO VICTOR", "0", "893790", "0", "893790"], ["INGOGLIA, PABLO", "MORA DARIO RAMON", "2", "5250240", "5250240", "0"], ["INGOGLIA, PABLO", "PEREZ CELSO HUGO", "2", "4172000", "4000000", "172000"], ["INGOGLIA, PABLO", "PEREZ CELSO HUGO", "0", "18267000", "0", "18267000"], ["INGOGLIA, PABLO", "PONTE NORBERTO", "0", "38850440", "0", "38850440"], ["INGOGLIA, PABLO", "PONTE NORBERTO", "3", "23770820", "8000000", "15770820"], ["INGOGLIA, PABLO", "STEFANI, RENZO", "2", "9600000", "0", "9600000"], ["INGOGLIA, PABLO", "TOMNIN SRL", "0", "13041480", "0", "13041480"], ["INGOGLIA, PABLO", "TOMNIN SRL", "2", "9099720", "4000000", "5099720"], ["INGOGLIA, PABLO", "VITORELLO SERGIO", "2", "21389400", "5000000", "16389400"], ["MARCIANO, MATIAS", "AGROKENTI SAS", "2", "789888", "789888", "0"], ["MARCIANO, MATIAS", "AGROSERVICIOS GILE", "3", "7075100", "0", "7075100"], ["MARCIANO, MATIAS", "AGROSERVICIOS GILE", "2", "8026200", "7000000", "1026200"], ["MARCIANO, MATIAS", "BIANCOTTI ENZO", "2", "7839150", "7839150", "0"], ["MARCIANO, MATIAS", "BIANCOTTI ENZO", "1", "13080000", "13080000", "0"], ["MARCIANO, MATIAS", "CARDOSO MATIAS GASTON", "3", "13236600", "0", "13236600"], ["MARCIANO, MATIAS", "CARDOSO MATIAS GASTON", "2", "25712350", "0", "25712350"], ["MARCIANO, MATIAS", "CHAIJ JORGE SAHID", "2", "1897200", "1897200", "0"], ["MARCIANO, MATIAS", "COPPINI NELVIO RAUL (TRANSPORTE COPPINI)", "3", "0", "0", "0"], ["MARCIANO, MATIAS", "CORTEZ MAXIMILIANO EDGARDO", "3", "33117720", "0", "33117720"], ["MARCIANO, MATIAS", "CORTEZ MAXIMILIANO EDGARDO", "2", "26088480", "22000000", "4088480"], ["MARCIANO, MATIAS", "CORTEZ MAXIMILIANO EDGARDO", "1", "960000", "960000", "0"], ["MARCIANO, MATIAS", "ESTANCIAS EUMA SRL", "2", "4860000", "0", "4860000"], ["MARCIANO, MATIAS", "LABOREOS S. A. S.", "3", "179068338", "25021050", "154047288"], ["MARCIANO, MATIAS", "LABOREOS S. A. S.", "2", "39978950", "39978950", "0"], ["MARCIANO, MATIAS", "PAMPA AGRO SERVICIOS S.R.L.", "3", "117500214", "37200000", "80300214"], ["MARCIANO, MATIAS", "PREMET SERGIO ANTONIO", "3", "41118300", "0", "41118300"], ["MARCIANO, MATIAS", "RAPETTO RAMIRO", "3", "902563", "0", "902563"], ["MARCIANO, MATIAS", "VELASQUEZ LUCIANA MARIELA", "2", "45540450", "45540450", "0"], ["MORENO, AGUSTIN", "AGROCULASSO SAS", "2", "17275000", "10000000", "7275000"], ["MORENO, AGUSTIN", "AGROCULASSO SAS", "3", "66724880", "0", "66724880"], ["MORENO, AGUSTIN", "BARZOLA FRANCISCO", "2", "14083200", "0", "14083200"], ["MORENO, AGUSTIN", "BOCCHETTO GERMAN DARIO", "3", "56389010", "20500000", "35889010"], ["MORENO, AGUSTIN", "BOCCHETTO LUCAS GASTON", "3", "55450050", "10500000", "44950050"], ["MORENO, AGUSTIN", "BORGARELLO YAMIL KAROL", "2", "7500000", "7500000", "0"], ["MORENO, AGUSTIN", "BRUDER GROUP S.A.", "2", "3280000", "3280000", "0"], ["MORENO, AGUSTIN", "CAMPESTRINI ROBERTO", "2", "2630200", "0", "2630200"]]};
+const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+const $ = id => document.getElementById(id);
+const fmt$ = n => (n < 0 ? "-$ " : "$ ") + Math.round(Math.abs(n)).toLocaleString("es-AR");
+const fmtP = n => (n * 100).toLocaleString("es-AR", {minimumFractionDigits: 1, maximumFractionDigits: 1}) + "%";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+let LAB = [], PAG = [], live = false;
+const FK = ["soc", "lab", "cert", "con", "anio"];
+const state = {soc: new Set(), lab: new Set(), cert: new Set(), con: new Set(), anio: new Set(), months: new Set(), allMonths: true, solo: false, q: "", sortCon: {k: "pago", d: -1}};
+
+/* ---------- parsing ---------- */
+function parseCSV(text) {
+  const rows = []; let row = [], cur = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+    else if (c === '"') q = true;
+    else if (c === ",") { row.push(cur); cur = ""; }
+    else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; row.push(cur); rows.push(row); row = []; cur = ""; }
+    else cur += c;
+  }
+  if (cur !== "" || row.length) { row.push(cur); rows.push(row); }
+  return rows.filter(r => r.some(v => v.trim() !== ""));
+}
+function num(v) {
+  if (v == null) return 0;
+  if (typeof v === "number") return isFinite(v) ? v : 0;
+  let s = String(v).replace(/[$\s ]/g, "");
+  if (!s) return 0;
+  const pD = s.lastIndexOf("."), pC = s.lastIndexOf(","), pos = Math.max(pD, pC);
+  if (pos >= 0) {
+    const dec = s[pos], other = dec === "." ? "," : ".";
+    const nDec = s.split(dec).length - 1;
+    const thousands = !s.includes(other) && (nDec > 1 || s.length - pos - 1 === 3);
+    s = thousands ? s.replace(/[.,]/g, "") : s.split(other).join("").replace(dec, ".");
+  }
+  const n = parseFloat(s); return isFinite(n) ? n : 0;
+}
+function fecha(v) {
+  const s = String(v || "").trim(); let m;
+  if ((m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/))) return {m: +m[2], y: +m[3] < 100 ? 2000 + +m[3] : +m[3]};
+  if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return {m: +m[2], y: +m[1]};
+  if ((m = s.match(/Date\((\d{4}),(\d{1,2})/))) return {m: +m[2] + 1, y: +m[1]};
+  return {m: null, y: null};
+}
+const norm = s => (s == null ? "" : String(s)).trim().replace(/\s+/g, " ");
+const H = h => norm(h).toUpperCase();
+function col(header, ...names) { for (const n of names) { const i = header.indexOf(n); if (i >= 0) return i; } return -1; }
+function certTxt(v) { if (typeof v === "number") return String(v); const s = norm(v); if (!s) return ""; const n = num(s); return String(Number.isInteger(n) ? n : s); }
+
+function buildLab(rows) {
+  const h = rows[0].map(H);
+  const c = {soc: col(h, "SOCIEDAD"), lab: col(h, "LABOR"), con: col(h, "CONTRATISTA"), cert: col(h, "CERTIFICACION", "CERTIFICACIÓN"),
+             fe: col(h, "FECHA_LABOR", "FECHA LABOR"), tot: col(h, "TOTAL$", "TOTAL $", "TOTAL")};
+  if (c.con < 0 || c.tot < 0) throw new Error("No encuentro CONTRATISTA / TOTAL$ en Labores");
+  return rows.slice(1).map(r => {
+    const f = fecha(r[c.fe]);
+    return {soc: norm(r[c.soc]) || "(Sin sociedad)", lab: norm(r[c.lab]) || "(Sin labor)", con: norm(r[c.con]).toUpperCase(),
+            cert: certTxt(r[c.cert]), m: f.m, y: f.y, tot: num(r[c.tot])};
+  }).filter(r => r.con);
+}
+function buildPag(rows) {
+  const h = rows[0].map(H);
+  const c = {mod: col(h, "MODULO", "MÓDULO"), con: col(h, "CONTRATISTA"), cert: col(h, "CERTIFICADO", "CERTIFICACION"),
+             tc: col(h, "TOTAL $ CERTIFICADOS", "TOTAL$ CERTIFICADOS"), pago: col(h, "TOTAL $ PAGO A CUENTA", "TOTAL$ PAGO A CUENTA"), sal: col(h, "SALDO")};
+  if (c.con < 0 || c.pago < 0) throw new Error("No encuentro CONTRATISTA / TOTAL $ PAGO A CUENTA en Pagos");
+  return rows.slice(1).map(r => ({mod: norm(r[c.mod]), con: norm(r[c.con]).toUpperCase(), cert: certTxt(r[c.cert]),
+                                  tc: num(r[c.tc]), pago: num(r[c.pago]), sal: num(r[c.sal])})).filter(r => r.con);
+}
+
+/* Lectura vía JSONP (etiqueta <script>): no depende de CORS, funciona abriendo el archivo con doble clic */
+let jsonpN = 0;
+function gvizJSONP(id) {
+  return new Promise((ok, ko) => {
+    const cb = "__gviz" + (++jsonpN) + "_" + Date.now();
+    const sc = document.createElement("script");
+    const done = () => { clearTimeout(to); delete window[cb]; sc.remove(); };
+    const to = setTimeout(() => { done(); ko(new Error("Google no respondió (¿la planilla es pública?)")); }, 20000);
+    window[cb] = resp => {
+      done();
+      if (!resp || resp.status === "error") {
+        const r = resp && resp.errors && resp.errors[0];
+        ko(new Error(r && /access|denied|permission|unauthor/i.test(r.reason + r.message)
+          ? "la planilla no está compartida como «Cualquier persona con el vínculo»"
+          : (r ? (r.detailed_message || r.message || r.reason) : "respuesta vacía")));
+        return;
+      }
+      ok(resp.table);
+    };
+    sc.onerror = () => { done(); ko(new Error("no se pudo contactar a Google (red, bloqueador o firewall)")); };
+    sc.src = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?headers=1&tqx=responseHandler:${cb}&_=${Date.now()}`;
+    document.head.appendChild(sc);
+  });
+}
+function tableToRows(t) {
+  const val = c => {
+    if (!c || c.v == null) return c && c.f != null ? c.f : "";
+    if (typeof c.v === "string" && /^Date\(/.test(c.v)) return c.v;
+    return c.v;
+  };
+  let header = t.cols.map(c => c.label || "");
+  let data = t.rows.map(r => (r.c || []).map(val));
+  if (header.every(h => !String(h).trim()) && data.length) { header = data[0].map(String); data = data.slice(1); }
+  return [header, ...data];
+}
+async function getCSV(id) {
+  let err;
+  try { return tableToRows(await gvizJSONP(id)); } catch (e) { err = e; }
+  // alternativa: fetch del CSV (funciona si la página se sirve desde un sitio web)
+  for (const u of [`https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&headers=1`, `https://docs.google.com/spreadsheets/d/${id}/export?format=csv`]) {
+    try {
+      const ac = new AbortController(), to = setTimeout(() => ac.abort(), 15000);
+      const r = await fetch(u + "&_=" + Date.now(), {cache: "no-store", signal: ac.signal}).finally(() => clearTimeout(to));
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const t = await r.text();
+      if (/^\s*</.test(t)) throw new Error("respuesta no es CSV");
+      return parseCSV(t);
+    } catch (e) {}
+  }
+  throw err;
+}
+
+function loadSnapshot() {
+  LAB = SNAP.lab.map(([lab, con, cert, fe, tot]) => { const f = fecha(fe); return {soc: "(Sin sociedad)", lab, con, cert, m: f.m, y: f.y, tot: +tot}; });
+  PAG = SNAP.pag.map(([mod, con, cert, tc, pago, sal]) => ({mod, con, cert, tc: +tc, pago: +pago, sal: +sal}));
+}
+
+async function sync() {
+  $("syncTxt").textContent = "Sincronizando…";
+  try {
+    const [a, b] = await Promise.all([getCSV(IDL), getCSV(IDP)]);
+    LAB = buildLab(a); PAG = buildPag(b); live = true;
+    $("banner").style.display = "none";
+    $("dot").className = "dot live";
+    $("syncTxt").textContent = "En vivo · " + new Date().toLocaleTimeString("es-AR", {hour: "2-digit", minute: "2-digit"}) +
+      ` · ${LAB.length} labores · ${PAG.length} pagos`;
+  } catch (e) {
+    
+    $("dot").className = "dot";
+    $("syncTxt").textContent = live ? "Sin conexión · últimos datos" : "Muestra local (sin conexión)";
+    const b = $("banner"); b.style.display = "block";
+    b.innerHTML = "⚠ No se pudo leer Google Sheets (" + esc(e.message) + "). " +
+      (live ? "Se muestran los últimos datos sincronizados." :
+       "Se muestra una <b>muestra parcial</b> precargada. Verificá que las planillas estén compartidas como «Cualquier persona con el vínculo» y que tengas internet.");
+  }
+  fillFilters(); render();
+}
+
+/* ---------- filters ---------- */
+const MS = {};
+function multiSelect(id, key) {
+  const root = $(id);
+  root.innerHTML = `<button type="button" class="ms-btn"><span class="txt">(Todos)</span><span class="n" style="display:none"></span><span class="car">▼</span></button>
+    <div class="ms-pop"><input type="search" placeholder="Buscar…"><div class="ms-acts"><button type="button" data-a="all">Seleccionar todos</button><button type="button" data-a="none">Limpiar</button></div>
+    <div class="ms-list"></div><div class="ms-foot">Sin selección = todos</div></div>`;
+  const btn = root.querySelector(".ms-btn"), list = root.querySelector(".ms-list"), q = root.querySelector("input[type=search]");
+  const m = {root, key, values: [], paint() {
+    const sel = state[key], n = sel.size;
+    root.classList.toggle("active", n > 0);
+    root.querySelector(".txt").textContent = n === 0 ? "(Todos)" : n === 1 ? [...sel][0] : [...sel].slice(0, 2).join(", ") + (n > 2 ? "…" : "");
+    const badge = root.querySelector(".n"); badge.style.display = n > 1 ? "" : "none"; badge.textContent = n;
+    const f = q.value.trim().toLowerCase();
+    list.innerHTML = m.values.filter(v => !f || String(v).toLowerCase().includes(f)).map(v =>
+      `<label><input type="checkbox" value="${esc(v)}"${sel.has(String(v)) ? " checked" : ""}>${esc(v)}</label>`).join("") || `<div class="muted" style="padding:6px">Sin coincidencias</div>`;
+  }};
+  btn.onclick = e => { e.stopPropagation(); const open = !root.classList.contains("open"); closeAll(); if (open) { root.classList.add("open"); q.value = ""; m.paint(); q.focus(); } };
+  root.querySelector(".ms-pop").onclick = e => e.stopPropagation();
+  q.oninput = () => m.paint();
+  list.onchange = e => { const v = e.target.value; e.target.checked ? state[key].add(v) : state[key].delete(v); m.paint(); render(); };
+  root.querySelector("[data-a=all]").onclick = () => { const f = q.value.trim().toLowerCase();
+    m.values.filter(v => !f || String(v).toLowerCase().includes(f)).forEach(v => state[key].add(String(v)));
+    if (state[key].size === m.values.length) state[key].clear(); m.paint(); render(); };
+  root.querySelector("[data-a=none]").onclick = () => { state[key].clear(); m.paint(); render(); };
+  MS[key] = m;
+}
+function closeAll() { document.querySelectorAll(".ms.open").forEach(x => x.classList.remove("open")); }
+document.addEventListener("click", closeAll);
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeAll(); });
+function fillFilters() {
+  const src = {soc: [LAB.map(r => r.soc)], lab: [LAB.map(r => r.lab)], cert: [[...LAB.map(r => r.cert), ...PAG.map(r => r.cert)], true],
+               con: [[...LAB.map(r => r.con), ...PAG.map(r => r.con)]], anio: [LAB.map(r => r.y), true]};
+  for (const k of FK) {
+    const [vals, numeric] = src[k];
+    const v = [...new Set(vals.filter(x => x !== "" && x != null).map(String))].sort((a, b) => numeric ? a - b : a.localeCompare(b, "es"));
+    MS[k].values = v;
+    for (const x of [...state[k]]) if (!v.includes(x)) state[k].delete(x);
+    MS[k].paint();
+  }
+}
+function buildMonths() {
+  const box = $("months");
+  const all = document.createElement("button"); all.className = "chip all on"; all.textContent = "★ Todos"; all.id = "mAll";
+  all.onclick = () => { state.allMonths = !state.allMonths; if (state.allMonths) state.months.clear(); paintMonths(); render(); };
+  box.appendChild(all);
+  MESES.forEach((m, i) => {
+    const b = document.createElement("button"); b.className = "chip"; b.textContent = m; b.dataset.m = i + 1;
+    b.onclick = () => {
+      const k = i + 1;
+      if (state.allMonths) { state.allMonths = false; state.months = new Set([k]); }
+      else state.months.has(k) ? state.months.delete(k) : state.months.add(k);
+      if (state.months.size === 0 || state.months.size === 12) { state.allMonths = true; state.months.clear(); }
+      paintMonths(); render();
+    };
+    box.appendChild(b);
+  });
+}
+function paintMonths() {
+  $("mAll").classList.toggle("on", state.allMonths);
+  document.querySelectorAll(".chip[data-m]").forEach(b => b.classList.toggle("on", !state.allMonths && state.months.has(+b.dataset.m)));
+}
+
+/* ---------- compute ---------- */
+function compute() {
+  const s = state;
+  const has = (set, v) => !set.size || set.has(String(v));
+  const okBase = r => has(s.soc, r.soc) && has(s.cert, r.cert) && has(s.con, r.con) && has(s.anio, r.y) && (s.allMonths || (r.m && s.months.has(r.m)));
+  const base = LAB.filter(okBase);
+  const rows = base.filter(r => has(s.lab, r.lab));
+  const pag = PAG.filter(p => has(s.cert, p.cert) && has(s.con, p.con));
+
+  const den = {}; base.forEach(r => den[r.con] = (den[r.con] || 0) + r.tot);
+  const pc = {}, pcert = {}, psal = {};
+  pag.forEach(p => { pc[p.con] = (pc[p.con] || 0) + p.pago; pcert[p.con] = (pcert[p.con] || 0) + p.tc; psal[p.con] = (psal[p.con] || 0) + p.sal; });
+
+  const det = {};
+  rows.forEach(r => {
+    const k = r.con + "¦" + r.lab;
+    (det[k] ||= {con: r.con, lab: r.lab, tot: 0}).tot += r.tot;
+  });
+  const pairs = Object.values(det).map(d => {
+    const pct = den[d.con] ? d.tot / den[d.con] : 0;
+    return {...d, pct, asig: (pc[d.con] || 0) * pct};
+  });
+  const byLab = {}; pairs.forEach(p => { if (p.asig) byLab[p.lab] = (byLab[p.lab] || 0) + p.asig; });
+  const labTot = {}; rows.forEach(r => labTot[r.con] = (labTot[r.con] || 0) + r.tot);
+  const cons = Object.keys(pc).filter(c => pc[c] > 0).map(c => ({con: c, lab: labTot[c] || 0, cert: pcert[c] || 0, pago: pc[c],
+    pct: pcert[c] ? pc[c] / pcert[c] : 0, sal: psal[c] || 0}));
+  const pagoTot = pag.reduce((a, p) => a + p.pago, 0), certTot = pag.reduce((a, p) => a + p.tc, 0);
+  const sinLab = Object.keys(pc).filter(c => !den[c]).reduce((a, c) => a + pc[c], 0);
+  return {pairs, byLab, cons, pc, kTot: rows.reduce((a, r) => a + r.tot, 0), pagoTot, certTot,
+          asigTot: pairs.reduce((a, p) => a + p.asig, 0), sinLab, nCon: cons.length};
+}
+
+/* ---------- render ---------- */
+let last;
+function bar(p) { const w = Math.max(0, Math.min(1, p)) * 100; return `<div class="pct"><div class="track"><div class="fill" style="width:${w}%"></div></div><span>${fmtP(p)}</span></div>`; }
+function render() {
+  const c = last = compute();
+  $("k1").textContent = fmt$(c.kTot); $("k2").textContent = fmt$(c.pagoTot);
+  $("k3").textContent = c.certTot ? fmtP(c.pagoTot / c.certTot) : "–";
+  $("k4").textContent = fmt$(c.asigTot); $("k5").textContent = fmt$(c.sinLab); $("k6").textContent = c.nCon;
+
+  // ① detalle
+  const q = state.q.toLowerCase();
+  let pairs = c.pairs.filter(p => (!state.solo || (c.pc[p.con] || 0) > 0) && (!q || p.con.toLowerCase().includes(q) || p.lab.toLowerCase().includes(q)));
+  const groups = {};
+  pairs.forEach(p => (groups[p.con] ||= []).push(p));
+  const gl = Object.entries(groups).map(([con, ps]) => ({con, ps: ps.sort((a, b) => b.tot - a.tot), tot: ps.reduce((a, p) => a + p.tot, 0),
+    asig: ps.reduce((a, p) => a + p.asig, 0), pago: c.pc[con] || 0})).sort((a, b) => b.tot - a.tot);
+  let h = `<thead><tr><th class="l">Contratista / Labor</th><th>Total $</th><th>% s/ contratista</th><th>$ Pago a cuenta asignado</th></tr></thead><tbody>`;
+  if (!gl.length) h += `<tr><td colspan="4" class="empty">Sin datos para los filtros elegidos</td></tr>`;
+  gl.forEach(g => {
+    h += `<tr class="grp"><td class="l">${esc(g.con)} <span class="muted">· ${g.ps.length} labor${g.ps.length > 1 ? "es" : ""}${g.pago ? " · pago a cuenta " + fmt$(g.pago) : ""}</span></td>` +
+         `<td>${fmt$(g.tot)}</td><td></td><td>${g.asig ? fmt$(g.asig) : "–"}</td></tr>`;
+    g.ps.forEach(p => h += `<tr><td class="l" style="padding-left:24px">${esc(p.lab)}</td><td>${fmt$(p.tot)}</td><td>${bar(p.pct)}</td><td>${p.asig ? fmt$(p.asig) : "–"}</td></tr>`);
+  });
+  $("tDet").innerHTML = h + "</tbody>";
+
+  // ② chart
+  const labs = Object.entries(c.byLab).sort((a, b) => b[1] - a[1]);
+  const max = labs.length ? labs[0][1] : 1, tot = labs.reduce((a, x) => a + x[1], 0);
+  $("chart").innerHTML = labs.length ? labs.map(([l, v]) =>
+    `<div class="row" data-l="${esc(l)}" data-v="${v}"><div class="name" title="${esc(l)}">${esc(l)}</div>` +
+    `<div class="barw"><div class="bar" style="width:${(v / max) * 72}%"></div><span class="val">${fmt$(v)} · ${fmtP(v / tot)}</span></div></div>`).join("") +
+    `<div class="total"><span>Total asignado</span><span>${fmt$(tot)}</span></div>`
+    : `<div class="empty">No hay pago a cuenta asignable con estos filtros</div>`;
+  document.querySelectorAll(".chart .row").forEach(el => {
+    el.onmousemove = e => {
+      const v = +el.dataset.v, contrib = c.pairs.filter(p => p.lab === el.dataset.l && p.asig > 0).sort((a, b) => b.asig - a.asig).slice(0, 5);
+      showTip(e, `<b>${esc(el.dataset.l)}</b>${fmt$(v)} · ${fmtP(v / tot)} del total<br><span class="muted">Principales contratistas:</span><br>` +
+        contrib.map(p => `${esc(p.con)}: ${fmt$(p.asig)}`).join("<br>"));
+    };
+    el.onmouseleave = hideTip;
+  });
+
+  // ③ contratistas
+  const sc = state.sortCon, cols = [["con", "Contratista", 1], ["lab", "$ Labores"], ["cert", "$ Certificado"], ["pago", "$ Pago cta."], ["pct", "% pag."], ["sal", "Saldo"]];
+  const list = [...c.cons].sort((a, b) => (typeof a[sc.k] === "string" ? a[sc.k].localeCompare(b[sc.k], "es") : a[sc.k] - b[sc.k]) * sc.d);
+  let t = "<thead><tr>" + cols.map(([k, n, l]) => `<th data-k="${k}" class="${l ? "l" : ""}">${n}${sc.k === k ? (sc.d > 0 ? " ▲" : " ▼") : ""}</th>`).join("") + "</tr></thead><tbody>";
+  t += list.length ? list.map(r => `<tr><td class="l"><b>${esc(r.con)}</b></td><td>${r.lab ? fmt$(r.lab) : "–"}</td><td>${fmt$(r.cert)}</td><td>${fmt$(r.pago)}</td><td>${fmtP(r.pct)}</td><td>${fmt$(r.sal)}</td></tr>`).join("")
+    : `<tr><td colspan="6" class="empty">Sin pagos a cuenta para los filtros elegidos</td></tr>`;
+  $("tCon").innerHTML = t + "</tbody>";
+  document.querySelectorAll("#tCon th").forEach(th => th.onclick = () => {
+    const k = th.dataset.k; state.sortCon = {k, d: state.sortCon.k === k ? -state.sortCon.d : (k === "con" ? 1 : -1)}; render();
+  });
+}
+function showTip(e, html) { const t = $("tip"); t.innerHTML = html; t.style.display = "block";
+  const x = Math.min(e.clientX + 14, innerWidth - t.offsetWidth - 10), y = Math.min(e.clientY + 14, innerHeight - t.offsetHeight - 10);
+  t.style.left = x + "px"; t.style.top = y + "px"; }
+function hideTip() { $("tip").style.display = "none"; }
+
+function exportCSV() {
+  const lines = [["Contratista", "Labor", "Total $", "% s/ contratista", "$ Pago a cuenta asignado"].join(";")];
+  last.pairs.filter(p => !state.solo || (last.pc[p.con] || 0) > 0).sort((a, b) => a.con.localeCompare(b.con, "es") || b.tot - a.tot)
+    .forEach(p => lines.push([p.con, p.lab, Math.round(p.tot), (p.pct * 100).toFixed(2).replace(".", ","), Math.round(p.asig)].map(v => `"${String(v).replace(/"/g, '""')}"`).join(";")));
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\n")], {type: "text/csv;charset=utf-8"}));
+  a.download = "detalle_contratistas.csv"; a.click();
+}
+
+
+/* ---------- descarga Excel ---------- */
+function filtrosTxt() {
+  const t = k => state[k].size ? [...state[k]].join(", ") : "(Todos)";
+  return [["Sociedad", t("soc")], ["Labor", t("lab")], ["Certificación", t("cert")], ["Contratista", t("con")], ["Año", t("anio")],
+          ["Meses", state.allMonths ? "Todos" : [...state.months].sort((a, b) => a - b).map(m => MESES[m - 1]).join(", ")],
+          ["Solo con pago a cuenta", state.solo ? "Sí" : "No"], ["Datos", live ? "En vivo (Google Sheets)" : "Muestra local"],
+          ["Descargado", new Date().toLocaleString("es-AR")]];
+}
+function tablas() {
+  const c = last;
+  const det = c.pairs.filter(p => !state.solo || (c.pc[p.con] || 0) > 0).sort((a, b) => a.con.localeCompare(b.con, "es") || b.tot - a.tot)
+    .map(p => [p.con, p.lab, Math.round(p.tot), +p.pct.toFixed(4), Math.round(p.asig)]);
+  const labs = Object.entries(c.byLab).sort((a, b) => b[1] - a[1]), tl = labs.reduce((a, x) => a + x[1], 0);
+  return {
+    "Detalle contratistas": [["Contratista", "Labor", "Total $", "% s/ contratista", "$ Pago a cuenta asignado"], ...det],
+    "Pago por labor": [["Labor", "$ Pago a cuenta asignado", "% del total"], ...labs.map(([l, v]) => [l, Math.round(v), +(v / tl).toFixed(4)]), ["TOTAL", Math.round(tl), 1]],
+    "Contratistas con pago": [["Contratista", "$ Labores (filtro)", "$ Certificado", "$ Pago a cuenta", "% pagado", "Saldo"],
+      ...[...c.cons].sort((a, b) => b.pago - a.pago).map(r => [r.con, Math.round(r.lab), Math.round(r.cert), Math.round(r.pago), +r.pct.toFixed(4), Math.round(r.sal)])],
+    "Resumen": [["Indicador", "Valor"], ["Total $ labores", Math.round(c.kTot)], ["Total $ pago a cuenta", Math.round(c.pagoTot)],
+      ["% pagado s/ certificado", c.certTot ? +(c.pagoTot / c.certTot).toFixed(4) : 0], ["Pago asignado a labores", Math.round(c.asigTot)],
+      ["Pago sin labores cargadas", Math.round(c.sinLab)], ["Contratistas con pago", c.nCon], [], ["Filtros aplicados", ""], ...filtrosTxt()]
+  };
+}
+function loadXLSX() {
+  return new Promise((ok, ko) => {
+    if (window.XLSX) return ok(window.XLSX);
+    const s = document.createElement("script"); s.src = "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";
+    s.onload = () => ok(window.XLSX); s.onerror = () => ko(new Error("sin librería")); document.head.appendChild(s);
+  });
+}
+async function downloadExcel() {
+  const T = tablas(), name = "Tablero_Labores_Pagos_" + new Date().toISOString().slice(0, 10);
+  try {
+    const X = await loadXLSX(), wb = X.utils.book_new();
+    for (const [n, rows] of Object.entries(T)) {
+      const ws = X.utils.aoa_to_sheet(rows);
+      ws["!cols"] = rows[0].map((_, j) => ({wch: Math.min(55, Math.max(12, ...rows.map(r => String(r[j] ?? "").length + 2)))}));
+      const hdr = rows[0];
+      for (let r = 1; r < rows.length; r++) hdr.forEach((h, j) => {
+        const cell = ws[X.utils.encode_cell({r, c: j})]; if (!cell || typeof cell.v !== "number") return;
+        cell.z = /%/.test(h) || (n === "Resumen" && /%/.test(rows[r][0])) ? "0.0%" : (/\$|Saldo|Valor/.test(h) ? '"$" #,##0' : "0");
+      });
+      ws["!autofilter"] = {ref: X.utils.encode_range({s: {r: 0, c: 0}, e: {r: Math.max(0, rows.length - 1), c: hdr.length - 1}})};
+      X.utils.book_append_sheet(wb, ws, n);
+    }
+    X.writeFile(wb, name + ".xlsx");
+  } catch (e) {
+    // sin internet: Excel 2003 XML (abre en Excel, puede avisar el formato)
+    const x = s => String(s).replace(/[&<>]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;"}[c]));
+    let xml = '<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">' +
+      '<Styles><Style ss:ID="h"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#2E7D32" ss:Pattern="Solid"/></Style></Styles>';
+    for (const [n, rows] of Object.entries(T)) {
+      xml += `<Worksheet ss:Name="${x(n)}"><Table>` + rows.map((r, i) => "<Row>" + r.map(v =>
+        `<Cell${i === 0 ? ' ss:StyleID="h"' : ""}><Data ss:Type="${typeof v === "number" ? "Number" : "String"}">${x(v ?? "")}</Data></Cell>`).join("") + "</Row>").join("") + "</Table></Worksheet>";
+    }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([xml + "</Workbook>"], {type: "application/vnd.ms-excel"})); a.download = name + ".xls"; a.click();
+  }
+}
+
+/* ---------- theme & events ---------- */
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  $("theme").textContent = t === "dark" ? "☀ Modo claro" : "🌙 Modo oscuro";
+  try { localStorage.setItem("tablero-theme", t); } catch (e) {}
+}
+let saved = "light"; try { saved = localStorage.getItem("tablero-theme") || "light"; } catch (e) {}
+setTheme(saved);
+$("theme").onclick = () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+$("refresh").onclick = sync;
+$("csv").onclick = exportCSV;
+$("dlx").onclick = $("dlx2").onclick = downloadExcel;
+$("dlp").onclick = () => window.print();
+[["fSoc", "soc"], ["fLab", "lab"], ["fCert", "cert"], ["fCon", "con"], ["fAnio", "anio"]].forEach(([id, k]) => multiSelect(id, k));
+$("soloPago").onchange = e => { state.solo = e.target.checked; render(); };
+$("q").oninput = e => { state.q = e.target.value; render(); };
+$("reset").onclick = () => {
+  FK.forEach(k => state[k].clear()); Object.assign(state, {allMonths: true, solo: false, q: ""}); state.months.clear();
+  $("soloPago").checked = false; $("q").value = ""; paintMonths(); fillFilters(); render();
+};
+buildMonths();
+loadSnapshot(); fillFilters(); render();
+sync();
+setInterval(sync, 5 * 60 * 1000);
+</script>
+</body>
+</html>
